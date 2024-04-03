@@ -8,4 +8,4 @@ AWS Glue was used for automated extraction of data from raw parquet files and cr
 
 A Power BI dashboard was developed to visualize the travel route alongside various weather and traffic metrics.
 
-![Alt text](/dashboard.pdf?raw=true "Title")
+![Alt text](/dashboard_image.jpg?raw=true "Title")
