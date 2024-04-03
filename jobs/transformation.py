@@ -71,9 +71,6 @@ def main():
     df['TimeSpan/begin'] = df['TimeSpan/begin'].apply(lambda x: x.astimezone(est))
     df['TimeSpan/end'] = df['TimeSpan/end'].apply(lambda x: x.astimezone(est))
 
-    # date_format = '%Y-%m-%dT%H:%M:%S'
-    # df['TimeSpan/begin'] = df['TimeSpan/begin'].apply(lambda x: datetime.strptime(x[:-5], date_format))
-    # df['TimeSpan/end'] = df['TimeSpan/end'].apply(lambda x: datetime.strptime(x[:-5], date_format))
 
     new_coords_long = []
     new_coords_lat = []
@@ -104,20 +101,8 @@ def main():
     df['TimeSpan/begin'] = df['TimeSpan/begin'].dt.round('1s')
     df['TimeSpan/end'] = df['TimeSpan/end'].dt.round('1s')
 
-    # df['BeginDate'] = pd.to_datetime(df['TimeSpan/begin']).dt.date
-    # df['EndDate'] = pd.to_datetime(df['TimeSpan/end']).dt.date
-
     df.to_csv('../final_df.csv', index=False)
 
-    # codes_url = 'https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM'
-    #
-    # wmo_html = pd.read_html(codes_url)
-    # wmo_code_df = pd.concat(
-    #     [wmo_html[1], wmo_html[3], wmo_html[5], wmo_html[7], wmo_html[9], wmo_html[11], wmo_html[12],
-    #      wmo_html[13]])
-    # wmo_code_df.drop(['Unnamed: 2'], axis=1, inplace=True)
-    # wmo_code_df.reset_index(drop=True, inplace=True)
-    # wmo_code_df.columns = ['Code', 'Description']
 
 if __name__ == "__main__":
     main()
