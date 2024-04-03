@@ -10,12 +10,7 @@ from datetime import datetime, timedelta
 import random
 
 wmo_code_df = None
-# spark-city-new
-# LONDON_COORDINATES = {"latitude": 51.5074, "longitude":-0.1278}
-# BIRMINGHAM_COORDINATES = {"latitude": 52.4862, "longitude": -1.8904}
-#
-# LATITUDE_INCREMENT = (BIRMINGHAM_COORDINATES['latitude']-LONDON_COORDINATES['latitude']) / 100
-# LONGITUDE_INCREMENT = (BIRMINGHAM_COORDINATES['longitude']-LONDON_COORDINATES['longitude']) / 100
+
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 VEHICLE_TOPIC = os.getenv('VEHICLE_TOPIC', 'vehicle_data')
@@ -24,14 +19,6 @@ TRAFFIC_TOPIC = os.getenv('TRAFFIC_TOPIC', 'traffic_data')
 WEATHER_TOPIC = os.getenv('WEATHER_TOPIC', 'weather_data')
 EMERGENCY_TOPIC = os.getenv('EMERGENCY_TOPIC', 'emergency_data')
 
-# start_time = datetime.now()
-# start_location = LONDON_COORDINATES.copy()
-
-
-# def get_next_time():
-#     global start_time
-#     start_time += timedelta(seconds=random.randint(30,60))
-#     return start_time
 
 
 def generate_gps_data(device_id, timestamp, vehicle_type='private'):
@@ -73,36 +60,26 @@ def get_weather_details(long, lat, start, end):
     start = start.replace(tzinfo=None).isoformat()
     end = end.replace(tzinfo=None).isoformat()
 
-    # print('hi5_1_0')
     url = f'https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={long}&start_hour={start}&end_hour={end}&hourly=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=America%2FNew_York'
     contents = urllib.request.urlopen(url).read()
     my_json = contents.decode('utf8').replace("'", '"')
     json_data = json.loads(my_json)
 
-    # print('hi5_1_1')
     temp = np.average(json_data['hourly']['temperature_2m'])
     precipitation = np.average(json_data['hourly']['precipitation'])
     humid = np.average(json_data['hourly']['relative_humidity_2m'])
     wind_speed = np.average(json_data['hourly']['wind_speed_10m'])
     wind_direction = np.average(json_data['hourly']['wind_direction_10m'])
 
-    # print('hi5_1_2')
     lst = json_data['hourly']['weather_code']
-    # print('hi5_1_3')
     weather_code = max(set(lst), key=lst.count)
-    # print('hi5_1_4')
     weather_description = wmo_code_df[wmo_code_df['Code']==weather_code]['Description'][weather_code]
-    # print('hi5_1_5')
     return temp, humid, precipitation, wind_speed, wind_direction, weather_description
 
 
 def generate_weather_data(device_id, time_start, time_end, location):
-    # print(type(location))
     latitude, longitude = location[0], location[1]
-    # print('hi5_1')
-    # print(type(time_start))
     temp, humid, precipitation, wind_speed, wind_direction, weather_description = get_weather_details(longitude, latitude, time_start, time_end)
-    # print('hi5_2')
     return {
         'id': uuid.uuid4(),
         'deviceId': device_id,
@@ -131,26 +108,9 @@ def generate_emergency_incident_data(device_id, timestamp, location):
     }
 
 
-# def simulate_vehicle_movement():
-    # global start_location
-    #
-    # start_location['latitude'] += LATITUDE_INCREMENT
-    # start_location['longitude'] += LONGITUDE_INCREMENT
-    #
-    # start_location['latitude'] += random.uniform(-0.0005, 0.0005)
-    # start_location['longitude'] += random.uniform(-0.0005, 0.0005)
-    #
-    # return start_location
-
-
 def generate_vehicle_data(device_id, row):
-    # location = simulate_vehicle_movement()
-    # print('hi')
-    # print(type(row))
     location = {'latitude': row['latitude'], 'longitude': row['longitude']}
-    # print(type(location))
-    # print('hi2')
-    # print(type(row))
+
     return {
         'id': uuid.uuid4(),
         'deviceId': device_id,
@@ -193,25 +153,13 @@ def simulate_journey(producer, device_id):
     df['TimeSpan/begin'] = df['TimeSpan/begin'].apply(lambda x: pd.to_datetime(x))
     df['TimeSpan/end'] = df['TimeSpan/end'].apply(lambda x: pd.to_datetime(x))
 
-    # print(df.info())
     for row in df.iterrows():
-    # while True:
         vehicle_data = generate_vehicle_data(device_id, row[1])
-        # print('hi3')
         gps_data = generate_gps_data(device_id, vehicle_data['timestamp'])
-        # print('hi4')
         traffic_camera_data = generate_traffic_camera_data(device_id, vehicle_data['timestamp'], vehicle_data['location'], camera_id= 'camera_123')
-        # print('hi5')
         weather_data = generate_weather_data(device_id, row[1]['TimeSpan/begin'], row[1]['TimeSpan/end'], vehicle_data['location'])
-        # print('hi6')
         emergency_incident_data = generate_emergency_incident_data(device_id, vehicle_data['timestamp'], vehicle_data['location'])
-        # print('hi7')
 
-
-        # if (vehicle_data['location'][0] >= BIRMINGHAM_COORDINATES['latitude']
-        #         and vehicle_data['location'][1] <= BIRMINGHAM_COORDINATES['longitude']):
-        #     print('Vehicle has reached Birmingham. Simulation Ending...')
-        #     break
         produce_data_to_kafka(producer, VEHICLE_TOPIC, vehicle_data)
         produce_data_to_kafka(producer, GPS_TOPIC, gps_data)
         produce_data_to_kafka(producer, TRAFFIC_TOPIC, traffic_camera_data)
@@ -236,12 +184,6 @@ if __name__ == "__main__":
         print('Simulation ended by user')
     except Exception as e:
         print(f'Unexpected Error occurred {e}')
-
-
-    # df = pd.read_csv(os.path.dirname(__file__) + '/../final_df.csv')
-    # print(df.columns)
-
-
 
 
 
